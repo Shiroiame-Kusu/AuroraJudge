@@ -1,0 +1,80 @@
+# Docker Compose 最小配置 - 仅包含必需服务
+# 使用方法: docker-compose -f docker-compose.minimal.yml up -d
+#
+# 此配置不包含 Redis, RabbitMQ, MinIO
+# 适合本地开发和测试
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库 (必需)
+  postgres:
+    image: postgres:16-alpine
+    container_name: aurora-postgres
+    environment:
+      POSTGRES_DB: aurorajudge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aurora123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aurorajudge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aurora-network
+
+  # 后端 API
+  api:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: aurora-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: aurorajudge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aurora123}
+      # Redis 留空 - 使用内存缓存
+      REDIS_CONNECTION: ""
+      # RabbitMQ 留空 - 禁用消息队列
+      RABBITMQ_CONNECTION: ""
+      # 使用本地存储
+      STORAGE_TYPE: Local
+      STORAGE_LOCAL_PATH: /app/data
+      JWT_SECRET: ${JWT_SECRET:-YourSuperSecretKeyHereMustBeAtLeast32CharactersLongForSecurity}
+    ports:
+      - "5000:8080"
+    volumes:
+      - api_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aurora-network
+
+  # 前端
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: aurora-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - aurora-network
+
+volumes:
+  postgres_data:
+  api_data:
+
+networks:
+  aurora-network:
+    driver: bridge

@@ -1,0 +1,156 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: aurora-postgres
+    environment:
+      POSTGRES_DB: aurora_judge
+      POSTGRES_USER: aurora
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aurora123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aurora -d aurora_judge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aurora-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: aurora-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aurora-network
+
+  # RabbitMQ 消息队列
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: aurora-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: aurora
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-aurora123}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - aurora-network
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio:latest
+    container_name: aurora-minio
+    environment:
+      MINIO_ROOT_USER: aurora
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-aurora123456}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - aurora-network
+
+  # 后端 API
+  api:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: aurora-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: aurora_judge
+      POSTGRES_USER: aurora
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aurora123}
+      REDIS_CONNECTION: redis:6379
+      RABBITMQ_CONNECTION: amqp://aurora:${RABBITMQ_PASSWORD:-aurora123}@rabbitmq:5672
+      STORAGE_TYPE: Minio
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: aurora
+      MINIO_PASSWORD: ${MINIO_PASSWORD:-aurora123456}
+      MINIO_BUCKET: aurora-judge
+      JWT_SECRET: ${JWT_SECRET:-YourSuperSecretKeyHereMustBeAtLeast32CharactersLongForSecurity}
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - aurora-network
+
+  # 判题机
+  judger:
+    build:
+      context: ./Judger
+      dockerfile: Dockerfile
+    container_name: aurora-judger
+    privileged: true
+    environment:
+      RABBITMQ_CONNECTION: amqp://aurora:${RABBITMQ_PASSWORD:-aurora123}@rabbitmq:5672
+      JUDGER_NAME: judger-1
+      JUDGER_WORKDIR: /tmp/aurora-judge
+      JUDGER_MAX_CONCURRENT: 4
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - aurora-network
+
+  # 前端
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: aurora-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - aurora-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:
+
+networks:
+  aurora-network:
+    driver: bridge

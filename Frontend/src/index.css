@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Modern “card” feel (no palette changes) */
+  --aj-radius-card: 14px;
+  --aj-radius-surface: 12px;
+  --aj-card-padding: 20px;
+
+  /* Neutral shadows (no palette changes) */
+  --aj-shadow-1: 0 6px 18px rgba(0, 0, 0, 0.06);
+  --aj-shadow-2: 0 10px 28px rgba(0, 0, 0, 0.10);
+  --aj-shadow-3: 0 14px 38px rgba(0, 0, 0, 0.14);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/*
+  Sakurairo-like modern card style (layout unchanged)
+  - Use only geometry/spacing/behavior tweaks; no new colors/fonts/shadows
+*/
+
+/* AntD surfaces */
+.ant-card {
+  border-radius: var(--aj-radius-card);
+  overflow: hidden;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.ant-card:hover {
+  box-shadow: var(--aj-shadow-2);
+  transform: translateY(-1px);
+}
+
+/* Avoid hover lift on cards used as full-page containers if needed */
+.ant-card.aj-no-hover:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.ant-card .ant-card-head {
+  padding-left: var(--aj-card-padding);
+  padding-right: var(--aj-card-padding);
+}
+
+.ant-card .ant-card-body {
+  padding: var(--aj-card-padding);
+}
+
+/* Tables feel like cards too */
+.ant-table-wrapper .ant-table-container {
+  border-radius: var(--aj-radius-card);
+  overflow: hidden;
+  transition: box-shadow 180ms ease;
+}
+
+.ant-table-wrapper .ant-table-container:hover {
+  box-shadow: var(--aj-shadow-1);
+}
+
+/* Inputs/selects/buttons: softer corners */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-btn,
+.ant-pagination-item,
+.ant-pagination-prev .ant-pagination-item-link,
+.ant-pagination-next .ant-pagination-item-link,
+.ant-tag {
+  border-radius: var(--aj-radius-surface) !important;
+}
+
+.ant-btn {
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.ant-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--aj-shadow-1);
+}
+
+.ant-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Cleaner loading spinner */
+.ant-spin .anticon-loading {
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.12));
+}
+
+/* Tabs: slightly round the active ink container without changing layout */
+.ant-tabs > .ant-tabs-nav .ant-tabs-nav-wrap {
+  border-radius: var(--aj-radius-surface);
+}
+
+/* Problem modal: softer, less intrusive scrollbar (scoped) */
+.aj-problem-modal .ant-modal-body {
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ant-color-fill-secondary, rgba(0, 0, 0, 0.18)) transparent;
+}
+
+.aj-problem-modal .ant-modal-body::-webkit-scrollbar {
+  width: 8px;
+  height: 0;
+}
+
+.aj-problem-modal .ant-modal-body::-webkit-scrollbar-thumb {
+  background-color: var(--ant-color-fill-secondary, rgba(0, 0, 0, 0.18));
+  border-radius: 999px;
+}
+
+.aj-problem-modal .ant-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+code, pre, .monaco-editor {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+}
+
+/* Markdown 样式 */
+.markdown-body {
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body h1 { font-size: 2em; }
+.markdown-body h2 { font-size: 1.5em; }
+.markdown-body h3 { font-size: 1.25em; }
+
+/* Compact markdown headings should not look like major content */
+
+/* Small pill style tags (used for problem meta) */
+.ant-tag.aj-pill {
+  border-radius: 999px;
+  padding-inline: 10px;
+  line-height: 20px;
+  font-size: 12px;
+  margin-inline-end: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+}
+
+.markdown-body code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 6px;
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background-color: transparent;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 8px 16px;
+  border: 1px solid #d0d7de;
+}
+
+.markdown-body table th {
+  background-color: #f6f8fa;
+  font-weight: 600;
+}
+
+/* 判题状态颜色 */
+.status-accepted { color: #52c41a; }
+.status-wrong-answer { color: #f5222d; }
+.status-time-limit { color: #1890ff; }
+.status-memory-limit { color: #722ed1; }
+.status-runtime-error { color: #fa8c16; }
+.status-compile-error { color: #faad14; }
+.status-pending { color: #8c8c8c; }
+.status-judging { color: #1890ff; }
+
+/* 难度标签 */
+.difficulty-easy { color: #52c41a; }
+.difficulty-medium { color: #faad14; }
+.difficulty-hard { color: #f5222d; }
